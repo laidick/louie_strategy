@@ -51,8 +51,27 @@ def find_signal(df: DataFrame) -> DataFrame:
 def gen_pnl(df: DataFrame) -> DataFrame:
     df = df.assign(next_open=df['Open'].shift(-1))
     df['diff'] = df['next_open'] - df['Close']
+    # pnl for 1 unit
     df['pnl'] = df['diff'] * df['signal']
     df['cum_pnl'] = df['pnl'].cumsum()
+    df['cum_pnl_4'] = df['cum_pnl'] * 4
+    # multiplier default is 4, max is 8, min is 1
+    df['multiplier'] = 4
+    df = df.reset_index()
+    # check previous pnl
+    for i in range(1, len(df)):
+        if df.loc[i, 'pnl'] > 0 and df.loc[i - 1, 'pnl'] > 0:
+            df.loc[i, 'multiplier'] = min(8, df.loc[i - 1, 'multiplier'] + 1)
+        elif df.loc[i - 1, 'pnl'] > 0 and df.loc[i, 'pnl'] < 0:
+            df.loc[i, 'multiplier'] = 4
+        elif df.loc[i - 1, 'pnl'] < 0 and df.loc[i, 'pnl'] < 0:
+            df.loc[i, 'multiplier'] = max(1, df.loc[i - 1, 'multiplier'] - 1)
+        else:
+            df.loc[i, 'multiplier'] = df.loc[i - 1, 'multiplier']
+    df = df.set_index('Date')
+    df['multi_pnl'] = df['pnl'] * df['multiplier']
+    df['cum_multi_pnl'] = df['multi_pnl'].cumsum()
+
     return df
 
 
@@ -67,7 +86,13 @@ if __name__ == '__main__':
 
     # pnl.plot()
     pnl['Close'].plot()
-    pnl['cum_pnl'].plot(secondary_y=True, style='g')
+    pnl['cum_pnl_4'].plot(secondary_y=True, style='g')
+    pnl['cum_multi_pnl'].plot(secondary_y=True, style='g')
+
+    plt.show()
+
+    pnl['multiplier'].plot()
+    pnl['cum_multi_pnl'].plot(secondary_y=True, style='g')
 
     plt.show()
 

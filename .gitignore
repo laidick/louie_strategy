@@ -1,1 +1,3 @@
 /venv/
+/jupyter/.ipynb_checkpoints/
+/.idea/
