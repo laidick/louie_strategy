@@ -167,4 +167,6 @@ if __name__ == '__main__':
     # down_diff = pnl[pnl['diff_pcnt'] < 0]['diff_pcnt']
     # print(down_diff.describe(percentiles=percentiles))
 
+    pnl.to_excel(excel_writer='HSI.xlsx')
+
     logger.info('end program.')
